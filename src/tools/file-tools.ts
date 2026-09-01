@@ -90,7 +90,7 @@ const writeOperations: WriteOperations = {
  * The cap is enforced by clamping `limit` before delegating, so pi's own
  * truncation, continuation notices and renderer keep working unchanged.
  */
-const readSchema = Type.Object({
+export const readSchema = Type.Object({
 	path: Type.String({ description: "Path to the file to read (relative or absolute)" }),
 	offset: Type.Number({
 		description: "The line number to start reading from (1-indexed). Use 1 to read from the beginning.",
@@ -113,14 +113,13 @@ export function createEncodingReadTool(cwd: string): ReadTool {
 			`1-${MAX_READ_LINES}), then offset=${MAX_READ_LINES + 1}, and so on. Use grep to locate the ` +
 			`relevant section before reading.`,
 		parameters: readSchema,
-		// pi normalises model-sent arguments here (e.g. file_path -> path). Keep that,
-		// then guarantee the offset our schema requires: a model that omits it gets a
-		// read from line 1 rather than a hard error, while the description still tells
-		// it to paginate explicitly.
-		prepareArguments: (args: unknown) => {
-			const prepared = (base.prepareArguments?.(args) ?? args) as Partial<ReadInput>;
-			return { ...prepared, path: String(prepared.path ?? ""), offset: prepared.offset ?? 1 };
-		},
+		// Deliberately no prepareArguments: a missing offset must fail schema
+		// validation rather than be defaulted. pi runs prepareArguments before
+		// validateToolArguments, so defaulting here would silently turn "read the
+		// grep hit at line 10000" into "read lines 1-200" — which is what smaller
+		// models do, and it burns far more context than a rejected tool call does.
+		// pi's own read tool defines no prepareArguments, so nothing is lost.
+		prepareArguments: undefined,
 		execute: (toolCallId, input, signal, onUpdate, ctx) => {
 			// The base schema types `offset` as optional and `limit` unbounded; ours
 			// narrows both, so the input is re-stated for the delegate call.

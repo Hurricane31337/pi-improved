@@ -18,6 +18,7 @@ import {
 	createEncodingReadTool,
 	createEncodingWriteTool,
 	MAX_READ_LINES,
+	readSchema,
 } from "../src/tools/file-tools.ts";
 
 const hasPi = Boolean(process.env.PI_ROOT);
@@ -128,5 +129,21 @@ suite("encoding-aware file tools (against real pi tools)", () => {
 
 		expect(out).toContain(`line ${MAX_READ_LINES + 1}`);
 		expect(out).not.toContain("line 1\n");
+	});
+});
+
+describe("read schema", () => {
+	it("marks offset as required so a missing offset is rejected before executing", () => {
+		// The point of requiring it: a model that omits the offset would otherwise
+		// read lines 1-200 instead of the grep hit at line 10000, burning context.
+		// Failing validation costs only the rejected tool call.
+		expect(readSchema.required).toContain("offset");
+		expect(readSchema.required).toContain("path");
+		expect(readSchema.required ?? []).not.toContain("limit");
+	});
+
+	it("does not define prepareArguments, which would run before validation", () => {
+		const tool = createEncodingReadTool(process.cwd());
+		expect(tool.prepareArguments).toBeUndefined();
 	});
 });
