@@ -12,6 +12,7 @@
  * first hook where the real value is visible.
  */
 
+import { writeSync } from "node:fs";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 export const LIST_PROVIDERS_FLAG = "list-providers";
@@ -38,7 +39,17 @@ export function registerListProviders(pi: ExtensionAPI): void {
 
 	pi.on("session_start", async (_event, ctx) => {
 		if (!pi.getFlag(LIST_PROVIDERS_FLAG)) return;
-		process.stdout.write(`${JSON.stringify({ providers: providerIds(ctx) })}\n`);
+		// NOTE FOR CALLERS: this lands on **stderr**, not stdout.
+		//
+		// pi calls takeOverStdout() before session_start, which rebinds
+		// process.stdout.write onto stderr so extension output cannot corrupt the
+		// RPC/TUI channel on stdout. Measured behaviour: with stdout and stderr
+		// redirected separately, the JSON arrives on stderr every time.
+		//
+		// So a caller must read stderr (or merge with 2>&1). Writing to fd 1
+		// directly does not get around it, and pretending otherwise would give the
+		// IDE an empty string.
+		writeSync(2, `${JSON.stringify({ providers: providerIds(ctx) })}\n`);
 		process.exit(0);
 	});
 }

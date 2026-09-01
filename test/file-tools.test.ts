@@ -8,6 +8,7 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { validateToolArguments } from "@earendil-works/pi-ai";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 /** The tools take an ExtensionContext; these tests exercise paths that never touch it. */
@@ -145,5 +146,21 @@ describe("read schema", () => {
 	it("does not define prepareArguments, which would run before validation", () => {
 		const tool = createEncodingReadTool(process.cwd());
 		expect(tool.prepareArguments).toBeUndefined();
+	});
+});
+
+describe("read argument validation (the path the agent loop takes)", () => {
+	it("rejects a read call that omits offset", () => {
+		const tool = createEncodingReadTool(process.cwd());
+		expect(() =>
+			validateToolArguments(tool as never, { name: "read", arguments: { path: "README.md" } } as never),
+		).toThrow(/offset/i);
+	});
+
+	it("accepts a read call that supplies offset", () => {
+		const tool = createEncodingReadTool(process.cwd());
+		expect(() =>
+			validateToolArguments(tool as never, { name: "read", arguments: { path: "README.md", offset: 1 } } as never),
+		).not.toThrow();
 	});
 });
