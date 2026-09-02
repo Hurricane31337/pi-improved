@@ -13,6 +13,8 @@
  *   - read returns at most 200 lines per call and requires an explicit offset.
  *   - Scaleway Generative APIs is available as a provider.
  *   - --list-providers prints provider ids as JSON, for the IDE pickers.
+ *   - a tool returning the same result 15x in one run stops the run, instead of
+ *     spinning until a host kills the process.
  *
  * What it deliberately does NOT contain: anything needing pi internals that
  * extensions cannot reach (settings persistence, config-dir layout, product
@@ -21,6 +23,7 @@
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { registerListProviders } from "./list-providers.ts";
+import { registerLoopBreaker } from "./loop-breaker.ts";
 import { registerScaleway } from "./providers/scaleway.ts";
 import { createEncodingEditTool, createEncodingReadTool, createEncodingWriteTool } from "./tools/file-tools.ts";
 
@@ -34,4 +37,5 @@ export default function piImproved(pi: ExtensionAPI, ctx?: ExtensionContext) {
 
 	registerScaleway(pi);
 	registerListProviders(pi);
+	registerLoopBreaker(pi);
 }

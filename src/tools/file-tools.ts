@@ -113,6 +113,17 @@ export function createEncodingReadTool(cwd: string): ReadTool {
 			`1-${MAX_READ_LINES}), then offset=${MAX_READ_LINES + 1}, and so on. Use grep to locate the ` +
 			`relevant section before reading.`,
 		parameters: readSchema,
+		// Overriding a built-in does not inherit pi's prompt contributions, so the
+		// pagination rule has to be restated here. It belongs to the tool that
+		// enforces the cap: the Visual Studio host used to carry these lines in its
+		// own context file, which meant terminal sessions never saw them.
+		promptSnippet: `read: read a file, at most ${MAX_READ_LINES} lines per call, offset required`,
+		promptGuidelines: [
+			`The read tool returns at most ${MAX_READ_LINES} lines per call and requires a 1-indexed offset.`,
+			`Paginate large files: offset=1 reads lines 1-${MAX_READ_LINES}, offset=${MAX_READ_LINES + 1} continues, and so on.`,
+			"When the result ends with [X more lines in file. Use offset=Y to continue.], pass that offset next.",
+			"Prefer grep to locate a symbol first, then read from the reported line instead of paging from the top.",
+		],
 		// Deliberately no prepareArguments: a missing offset must fail schema
 		// validation rather than be defaulted. pi runs prepareArguments before
 		// validateToolArguments, so defaulting here would silently turn "read the

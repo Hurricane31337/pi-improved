@@ -14,6 +14,7 @@ lives here as extension code. Upgrading pi is a version bump, not a merge.
 | `read` returns at most 200 lines and requires `offset` | Plain pi allows 2000 lines and an optional offset, so a model can pull a whole file into context and lose track of position. | Tighter schema + `limit` clamped before delegating |
 | Scaleway Generative APIs available as a provider | Not supported upstream. | `pi.registerProvider` |
 | `--list-providers` prints provider ids as JSON | The IDE extensions shell out to the bundled CLI to populate their provider picker and need a machine-readable list from the binary they actually run. | `pi.registerFlag` + `session_start` |
+| A tool that returns the same result 15× in one run ends the run | A model that has lost the plot repeats one call until something external kills it. This used to be detected in the Visual Studio host, so the TUI had no equivalent and the model was severed mid-turn with nothing in the transcript saying why. | `tool_execution_end` counts identical results, `tool_call` returns `{ block, terminate, reason }` |
 
 ## Design rule
 
