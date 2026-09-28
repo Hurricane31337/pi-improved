@@ -15,17 +15,29 @@
  *   - --list-providers prints provider ids as JSON, for the IDE pickers.
  *   - a tool returning the same result 15x in one run stops the run, instead of
  *     spinning until a host kills the process.
+ *   - the base system-prompt context (host awareness, no-project notice,
+ *     README fallback) and the default tool set (adds grep/find/ls to pi's
+ *     own read/bash/edit/write). Neither is company- or product-specific, so
+ *     both live here rather than in pi-label_intern, which every product
+ *     variant except one does not even load.
  *
  * What it deliberately does NOT contain: anything needing pi internals that
  * extensions cannot reach (settings persistence, config-dir layout, product
  * branding). Those live as patches in the consuming repo — see README.
+ *
+ * Flags:
+ *   --host <name>   where the agent runs, e.g. "Visual Studio 2022". Empty
+ *                   means an ordinary terminal session.
+ *   --no-project    the host has no project open: no tools, German notice.
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { registerSessionContext } from "./context.ts";
 import { registerListProviders } from "./list-providers.ts";
 import { registerLoopBreaker } from "./loop-breaker.ts";
 import { registerScaleway } from "./providers/scaleway.ts";
 import { createEncodingEditTool, createEncodingReadTool, createEncodingWriteTool } from "./tools/file-tools.ts";
+import { registerToolSelection } from "./tools.ts";
 
 export default function piImproved(pi: ExtensionAPI, ctx?: ExtensionContext) {
 	const cwd = ctx?.cwd ?? process.cwd();
@@ -38,4 +50,25 @@ export default function piImproved(pi: ExtensionAPI, ctx?: ExtensionContext) {
 	registerScaleway(pi);
 	registerListProviders(pi);
 	registerLoopBreaker(pi);
+
+	pi.registerFlag("host", {
+		type: "string",
+		default: "",
+		description: 'Name of the host application the agent runs in (e.g. "Visual Studio 2022").',
+	});
+	pi.registerFlag("no-project", {
+		type: "boolean",
+		default: false,
+		description:
+			"The host has no project open: disable every tool and say so in the system prompt. " +
+			"A terminal session always has a working directory and should not pass this.",
+	});
+
+	// Flag values are applied after extension factories run, so they must be
+	// read from a hook — never from this function body.
+	const host = () => String(pi.getFlag("host") ?? "");
+	const noProject = () => pi.getFlag("no-project") === true;
+
+	registerSessionContext(pi, { host, noProject });
+	registerToolSelection(pi, { noProject });
 }

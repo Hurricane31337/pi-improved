@@ -15,6 +15,7 @@ lives here as extension code. Upgrading pi is a version bump, not a merge.
 | Scaleway Generative APIs available as a provider | Not supported upstream. | `pi.registerProvider` |
 | `--list-providers` prints provider ids as JSON | The IDE extensions shell out to the bundled CLI to populate their provider picker and need a machine-readable list from the binary they actually run. | `pi.registerFlag` + `session_start` |
 | A tool that returns the same result 15× in one run ends the run | A model that has lost the plot repeats one call until something external kills it. This used to be detected in the Visual Studio host, so the TUI had no equivalent and the model was severed mid-turn with nothing in the transcript saying why. | `tool_execution_end` counts identical results, `tool_call` returns `{ block, terminate, reason }` |
+| `--host "Visual Studio 2022"` names the host in the system prompt, `--no-project` disables every tool and prepends a German notice, and the default tool set gains `grep`/`find`/`ls` | Every product variant and a terminal session should agree on what "normal" looks like. None of this is company- or product-specific — pi-label_intern (loaded only by the one product variant that needs Label Software's own conventions) used to carry it, which meant a terminal session or any other variant got a different agent. | `pi.registerFlag`, `before_agent_start` for the prompt, `session_start` + `pi.setActiveTools` for the tools |
 
 ## Design rule
 
@@ -70,9 +71,13 @@ src/
   providers/scaleway.ts        Scaleway provider registration
   providers/scaleway.models.json  static catalog snapshot (pricing, thinking maps)
   list-providers.ts            --list-providers flag
+  context.ts                   --host / --no-project system-prompt context, README fallback
+  tools.ts                     default tool set (adds grep/find/ls to pi's read/bash/edit/write)
 test/
   encoding.test.ts             unit tests for detection and round-tripping
   file-tools.test.ts           integration tests against pi's real tools
+  context.test.ts              unit tests for context.ts
+  tools.test.ts                unit tests for tools.ts
 ```
 
 ## Development
