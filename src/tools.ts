@@ -18,6 +18,9 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 /** What a session should have active when nothing says otherwise. */
 export const PRODUCT_TOOLS = ["read", "write", "edit", "grep", "find", "ls", "bash"] as const;
 
+/** pi's built-in tools. Anything active that is not one of these was added by an extension. */
+const BUILT_IN_TOOLS = new Set(["read", "bash", "powershell", "edit", "write", "grep", "find", "ls"]);
+
 /**
  * pi's own tool-selection flags (cli/args.ts). When the user passes any of
  * these they have said what they want, and this extension must not overrule it.
@@ -64,6 +67,13 @@ export function registerToolSelection(pi: ExtensionAPI, options: ToolOptions): v
 		if (toolsChosenOnCommandLine(options.argv ?? process.argv)) return;
 
 		const tools = resolveProductTools(pi.getAllTools().map((tool) => tool.name));
-		if (tools.length > 0) pi.setActiveTools(tools);
+		if (tools.length === 0) return;
+
+		// Keep what other extensions already switched on (a host's own tools, say).
+		// Extension load order decides whether their session_start hook runs before
+		// or after this one; replacing the list outright would drop their tools
+		// whenever theirs ran first.
+		const kept = pi.getActiveTools().filter((name) => !tools.includes(name) && !BUILT_IN_TOOLS.has(name));
+		pi.setActiveTools([...tools, ...kept]);
 	});
 }

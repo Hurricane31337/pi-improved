@@ -5,7 +5,7 @@ import { PRODUCT_TOOLS, registerToolSelection, resolveProductTools, toolsChosenO
 const ALL_TOOLS = ["read", "bash", "powershell", "edit", "write", "grep", "find", "ls"];
 
 /** Captures what the extension would set as the active tool list. */
-function harness(options: { noProject?: boolean; argv?: string[]; available?: string[] } = {}) {
+function harness(options: { noProject?: boolean; argv?: string[]; available?: string[]; active?: string[] } = {}) {
 	let handler: (() => Promise<void>) | undefined;
 	let active: string[] | undefined;
 
@@ -14,6 +14,7 @@ function harness(options: { noProject?: boolean; argv?: string[]; available?: st
 			handler = fn;
 		},
 		getAllTools: () => (options.available ?? ALL_TOOLS).map((name) => ({ name })),
+		getActiveTools: () => options.active ?? ["read", "bash", "edit", "write"],
 		setActiveTools: (names: string[]) => {
 			active = names;
 		},
@@ -43,6 +44,11 @@ beforeEach(() => {
 describe("tool selection", () => {
 	it("activates the default tool set for a plain `pi`", async () => {
 		expect(await session.run()).toEqual([...PRODUCT_TOOLS]);
+	});
+
+	it("keeps tools other extensions already activated", async () => {
+		const active = await harness({ active: ["read", "bash", "edit", "write", "vs_build"] }).run();
+		expect(active).toEqual([...PRODUCT_TOOLS, "vs_build"]);
 	});
 
 	it("includes the tools pi leaves off by default", async () => {
