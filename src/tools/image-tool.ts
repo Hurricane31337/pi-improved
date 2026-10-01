@@ -51,10 +51,14 @@ export function createReadImageTool(cwd: string): ReadImageTool {
 		description:
 			"Look at an image file: screenshots, photos, diagrams, exported forms (png, jpg, gif, webp, bmp). " +
 			"The image is sent to you as an attachment, scaled down if it is large. " +
+			"Only for image files on disk: an image the user attached to their message is already visible to you " +
+			"and has no file path, so do not look for it. " +
 			"Use read for text files — this tool refuses anything that is not an image.",
 		promptSnippet: "read_image: look at an image file (png, jpg, gif, webp, bmp)",
 		promptGuidelines: [
-			"To look at a screenshot or any other image file, use read_image. read is for text files only.",
+			"To look at a screenshot or any other image file on disk, use read_image. read is for text files only.",
+			"An image attached to the user's message is part of that message: you can already see it, it has no file path, " +
+				"and you must not search the project for it or call read_image for it.",
 		],
 		parameters: readImageSchema,
 		executionMode: "parallel",
