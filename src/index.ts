@@ -37,6 +37,7 @@ import { registerListProviders } from "./list-providers.ts";
 import { registerLoopBreaker } from "./loop-breaker.ts";
 import { registerScaleway } from "./providers/scaleway.ts";
 import { createEncodingEditTool, createEncodingReadTool, createEncodingWriteTool } from "./tools/file-tools.ts";
+import { createReadImageTool } from "./tools/image-tool.ts";
 import { registerToolSelection } from "./tools.ts";
 
 export default function piImproved(pi: ExtensionAPI, ctx?: ExtensionContext) {
@@ -46,6 +47,7 @@ export default function piImproved(pi: ExtensionAPI, ctx?: ExtensionContext) {
 	pi.registerTool(createEncodingReadTool(cwd));
 	pi.registerTool(createEncodingEditTool(cwd));
 	pi.registerTool(createEncodingWriteTool(cwd));
+	pi.registerTool(createReadImageTool(cwd));
 
 	registerScaleway(pi);
 	registerListProviders(pi);

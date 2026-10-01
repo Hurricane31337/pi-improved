@@ -2,7 +2,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { beforeEach, describe, expect, it } from "vitest";
 import { PRODUCT_TOOLS, registerToolSelection, resolveProductTools, toolsChosenOnCommandLine } from "../src/tools.js";
 
-const ALL_TOOLS = ["read", "bash", "powershell", "edit", "write", "grep", "find", "ls"];
+const ALL_TOOLS = ["read", "read_image", "bash", "powershell", "edit", "write", "grep", "find", "ls"];
 
 /** Captures what the extension would set as the active tool list. */
 function harness(options: { noProject?: boolean; argv?: string[]; available?: string[]; active?: string[] } = {}) {

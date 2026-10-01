@@ -16,7 +16,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 /** What a session should have active when nothing says otherwise. */
-export const PRODUCT_TOOLS = ["read", "write", "edit", "grep", "find", "ls", "bash"] as const;
+export const PRODUCT_TOOLS = ["read", "read_image", "write", "edit", "grep", "find", "ls", "bash"] as const;
 
 /** pi's built-in tools. Anything active that is not one of these was added by an extension. */
 const BUILT_IN_TOOLS = new Set(["read", "bash", "powershell", "edit", "write", "grep", "find", "ls"]);

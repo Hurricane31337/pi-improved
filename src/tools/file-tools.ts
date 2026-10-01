@@ -15,10 +15,12 @@ import {
 	readFile as fsReadFile,
 	writeFile as fsWriteFile,
 } from "node:fs/promises";
+import { isAbsolute, resolve } from "node:path";
 import {
 	createEditToolDefinition,
 	createReadToolDefinition,
 	createWriteToolDefinition,
+	detectSupportedImageMimeTypeFromFile,
 	type EditOperations,
 	type ReadOperations,
 	type ReadToolDetails,
@@ -107,8 +109,8 @@ export function createEncodingReadTool(cwd: string): ReadTool {
 	return {
 		...base,
 		description:
-			`Read the contents of a file. Supports text files and images (jpg, png, gif, webp, bmp). ` +
-			`Images are sent as attachments. For text files, returns at most ${MAX_READ_LINES} lines per call. ` +
+			`Read the contents of a text file. For images (png, jpg, gif, webp, bmp) use read_image instead. ` +
+			`Returns at most ${MAX_READ_LINES} lines per call. ` +
 			`Always provide offset (1-indexed). Paginate large files: first call offset=1 (reads lines ` +
 			`1-${MAX_READ_LINES}), then offset=${MAX_READ_LINES + 1}, and so on. Use grep to locate the ` +
 			`relevant section before reading.`,
@@ -131,7 +133,24 @@ export function createEncodingReadTool(cwd: string): ReadTool {
 		// models do, and it burns far more context than a rejected tool call does.
 		// pi's own read tool defines no prepareArguments, so nothing is lost.
 		prepareArguments: undefined,
-		execute: (toolCallId, input, signal, onUpdate, ctx) => {
+		execute: async (toolCallId, input, signal, onUpdate, ctx) => {
+			// Our operations are text-only, so an image would come back as the bytes of
+			// a PNG read as text. Say what to do instead of returning that.
+			const requested = (input as unknown as ReadInput).path;
+			const absolute = isAbsolute(requested) ? requested : resolve(ctx?.cwd ?? cwd, requested);
+			const imageType = await detectSupportedImageMimeTypeFromFile(absolute).catch(() => null);
+			if (imageType) {
+				return {
+					content: [
+						{
+							type: "text" as const,
+							text: `[${requested} is an image (${imageType}), not text. Use the read_image tool to look at it.]`,
+						},
+					],
+					details: undefined,
+				};
+			}
+
 			// The base schema types `offset` as optional and `limit` unbounded; ours
 			// narrows both, so the input is re-stated for the delegate call.
 			const { limit, ...rest } = input as unknown as ReadInput;
